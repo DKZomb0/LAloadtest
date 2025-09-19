@@ -1,10 +1,13 @@
 """FastAPI application exposing the load test orchestrator."""
 from __future__ import annotations
 
+from pathlib import Path
 from uuid import UUID
 
 from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.encoders import jsonable_encoder
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from . import __version__
 from .models import (
@@ -19,6 +22,10 @@ from .orchestrator import TestOrchestrator
 
 app = FastAPI(title="Middleware Load Test Orchestrator", version=__version__)
 orchestrator = TestOrchestrator()
+STATIC_DIR = Path(__file__).parent / "static"
+
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 async def _get_test_summary_or_404(test_id: UUID) -> TestSummary:
@@ -39,6 +46,20 @@ async def _get_test_or_404(test_id: UUID):
 async def root() -> dict:
     """Basic health endpoint."""
     return {"service": app.title, "version": app.version}
+
+
+@app.get("/ui", include_in_schema=False)
+async def serve_ui() -> FileResponse:
+    """Serve the bundled single-page application."""
+
+    if not STATIC_DIR.exists():  # pragma: no cover - only triggered if assets are missing
+        raise HTTPException(status_code=404, detail="The web interface is not available.")
+
+    index_path = STATIC_DIR / "index.html"
+    if not index_path.exists():  # pragma: no cover - only triggered if assets are missing
+        raise HTTPException(status_code=404, detail="The web interface is not available.")
+
+    return FileResponse(index_path)
 
 
 @app.get("/tests", response_model=TestListResponse)

@@ -45,6 +45,7 @@ tests/
 
 4. **Interact with the API:**
    - Open the automatically generated API docs at `http://localhost:8000/docs` to explore and invoke endpoints.
+   - Launch the real-time dashboard at `http://localhost:8000/ui` to create tests and monitor them through a graphical interface.
    - Use the `/tests` endpoints to create, start, stop, and inspect load tests.
    - Subscribe to real-time updates via WebSocket at `ws://localhost:8000/ws/tests/{test_id}`.
    - Point your downstream service callbacks to `POST http://localhost:8000/callbacks` and include the `correlation_token` returned in each outbound request.
@@ -99,6 +100,18 @@ Connect to the WebSocket endpoint for a test to receive periodic JSON payloads c
 - Outstanding correlation tokens that are still awaiting callbacks (truncated to 50 entries)
 
 These updates can be used to power dashboards or feed alerting workflows during a load test.
+
+### Using the built-in dashboard
+
+The repository bundles a single-page application that gives you a visual overview of the orchestrator. After the API is running, navigate to `http://localhost:8000/ui` to:
+
+- Inspect all configured tests, including their status, call counts, success rate, and response-time statistics.
+- Start, stop, and refresh tests without leaving the page.
+- Watch live metrics that stream in over WebSockets, with automatic refresh of recent call activity.
+- Review outstanding correlation tokens and recent callback activity.
+- Create new tests with a guided form that accepts headers, payload JSON, and an option to start immediately.
+
+The dashboard automatically reconnects to the WebSocket feed when you switch between tests so you can keep the UI open while a test is in progress.
 
 ## Running tests
 

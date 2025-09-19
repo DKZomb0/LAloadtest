@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Middleware Load Test Dashboard</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="banner">
+    <div>
+      <h1>Middleware Load Test Dashboard</h1>
+      <p>Configure, launch, and monitor orchestrated load tests in real time.</p>
+    </div>
+    <div id="status-banner" class="status" data-type="info" role="status" aria-live="polite">Loading…</div>
+  </header>
+  <main class="layout">
+    <section class="panel tests-panel">
+      <div class="panel-header">
+        <h2>Load Tests</h2>
+        <div class="panel-actions">
+          <button id="refresh-tests" class="button button-small" type="button">Refresh</button>
+        </div>
+      </div>
+      <p class="muted" id="tests-empty-state">No tests have been created yet.</p>
+      <ul id="tests-list" class="test-list"></ul>
+    </section>
+    <section class="panel details-panel">
+      <div class="panel-header">
+        <h2>Test Details</h2>
+        <div class="panel-actions button-row hidden" id="test-actions">
+          <button id="refresh-summary" class="button button-small" type="button">Refresh</button>
+          <button id="start-test" class="button button-small button-primary" type="button">Start</button>
+          <button id="stop-test" class="button button-small button-danger" type="button">Stop</button>
+        </div>
+      </div>
+      <div id="test-details" class="muted">Select a test to see the latest metrics.</div>
+      <section id="summary-section" class="hidden">
+        <header class="summary-header">
+          <div>
+            <h3 id="summary-name"></h3>
+            <p class="muted">
+              <span>Created <span id="summary-created"></span></span>
+              <span id="summary-started-wrapper" class="hidden"> • Started <span id="summary-started"></span></span>
+              <span id="summary-finished-wrapper" class="hidden"> • Finished <span id="summary-finished"></span></span>
+            </p>
+          </div>
+          <span id="summary-status" class="status-pill" data-status="pending">Pending</span>
+        </header>
+        <div class="stats-grid">
+          <div class="stat-block">
+            <h4>Call Counts</h4>
+            <dl>
+              <div><dt>Expected</dt><dd id="count-expected">0</dd></div>
+              <div><dt>Sent</dt><dd id="count-sent">0</dd></div>
+              <div><dt>Dispatched</dt><dd id="count-dispatched">0</dd></div>
+              <div><dt>Completed</dt><dd id="count-completed">0</dd></div>
+              <div><dt>Failed</dt><dd id="count-failed">0</dd></div>
+              <div><dt>Pending</dt><dd id="count-pending">0</dd></div>
+            </dl>
+          </div>
+          <div class="stat-block">
+            <h4>Success &amp; Timing</h4>
+            <dl>
+              <div><dt>Success rate</dt><dd id="summary-success-rate">0%</dd></div>
+              <div><dt>Avg throughput</dt><dd id="summary-throughput">—</dd></div>
+              <div><dt>Min duration</dt><dd id="rt-min">—</dd></div>
+              <div><dt>Median duration</dt><dd id="rt-median">—</dd></div>
+              <div><dt>Avg duration</dt><dd id="rt-average">—</dd></div>
+              <div><dt>Max duration</dt><dd id="rt-max">—</dd></div>
+            </dl>
+          </div>
+        </div>
+        <div id="outstanding-wrapper" class="outstanding hidden">
+          <h4>Outstanding Correlation Tokens</h4>
+          <p class="muted">The first 50 tokens awaiting callbacks.</p>
+          <ul id="outstanding-list"></ul>
+        </div>
+        <div id="notes-wrapper" class="notes hidden">
+          <h4>Notes</h4>
+          <p id="summary-notes"></p>
+        </div>
+      </section>
+      <section class="calls-section">
+        <div class="panel-header">
+          <h3>Recent Calls</h3>
+          <div class="panel-actions">
+            <button id="refresh-calls" class="button button-small" type="button">Refresh</button>
+          </div>
+        </div>
+        <div id="calls-container" class="table-container">
+          <p class="muted">Select a test to view recent call activity.</p>
+        </div>
+      </section>
+    </section>
+    <section class="panel form-panel">
+      <h2>Create Load Test</h2>
+      <form id="create-test-form" autocomplete="off">
+        <label>
+          Name
+          <input type="text" name="name" required placeholder="evening-peak">
+        </label>
+        <label>
+          Target URL
+          <input type="url" name="target_url" required placeholder="https://example.com/api/process">
+        </label>
+        <label>
+          Method
+          <select name="method">
+            <option value="POST" selected>POST</option>
+            <option value="GET">GET</option>
+            <option value="PUT">PUT</option>
+            <option value="PATCH">PATCH</option>
+            <option value="DELETE">DELETE</option>
+          </select>
+        </label>
+        <div class="form-row">
+          <label>
+            Rate per minute
+            <input type="number" name="rate_per_minute" min="1" max="6000" required value="60">
+          </label>
+          <label>
+            Duration (seconds)
+            <input type="number" name="duration_seconds" min="1" max="86400" required value="300">
+          </label>
+        </div>
+        <label>
+          Headers (JSON)
+          <textarea name="headers" rows="3" placeholder='{"Ocp-Apim-Subscription-Key": "<subscription-key>"}'></textarea>
+        </label>
+        <label>
+          Payload (JSON)
+          <textarea name="payload" rows="4" placeholder='{"message": "hello from orchestrator"}'></textarea>
+        </label>
+        <label class="checkbox">
+          <input type="checkbox" name="start_immediately">
+          Start immediately
+        </label>
+        <button type="submit" class="button button-primary full-width">Create test</button>
+      </form>
+      <p class="help-text">
+        After creation, select the test from the list to start or stop it and to monitor live metrics.
+        Configure your downstream service to POST callbacks to <code>/callbacks</code> with the correlation token that the orchestrator provides.
+      </p>
+    </section>
+  </main>
+  <footer class="footer">
+    <p>
+      API base URL: <code id="api-base"></code> • Version <span id="app-version">—</span>
+    </p>
+  </footer>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
